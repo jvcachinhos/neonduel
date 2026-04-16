@@ -2,215 +2,567 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    
-    <!-- 🔥 MOBILE OTIMIZADO -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-    <title>Neon Duel Mobile</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Duel: Ultimate Custom</title>
     <style>
         :root {
             --bg: #050505;
             --p1-color: #3498db;
             --p2-color: #e74c3c;
             --target-color: #2ecc71;
+            --gold: #f1c40f;
         }
 
-        html, body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            touch-action: none;
-            background: var(--bg);
-            font-family: sans-serif;
-        }
-
-        #menuOverlay {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: #000;
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            background-color: var(--bg);
+            color: white;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+            user-select: none;
         }
 
-        button {
-            padding: 15px;
-            margin: 10px;
-            font-size: 16px;
-            border: none;
-            border-radius: 10px;
+        #bg-animation {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 20% 30%, #1a5276 0%, transparent 40%),
+                        radial-gradient(circle at 80% 70%, #922b21 0%, transparent 40%);
+            opacity: 0.4;
+            z-index: -1;
+            filter: blur(60px);
+            animation: pulseBg 10s infinite alternate;
         }
 
-        canvas {
-            display: none;
+        @keyframes pulseBg {
+            from { transform: scale(1); }
+            to { transform: scale(1.2); }
         }
 
-        #hud {
+        #menuOverlay, #rankingOverlay {
             position: absolute;
-            top: 10px;
-            width: 100%;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+        }
+
+        #rankingOverlay { display: none; z-index: 150; }
+
+        .menu-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 30px;
             text-align: center;
-            color: white;
-            font-weight: bold;
-            display: none;
+            width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        #win {
-            display: none;
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: black;
-            color: white;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
+        h1, h2 { 
+            margin: 0 0 5px 0; font-size: 28px;
+            font-weight: 800; letter-spacing: 6px;
+            text-transform: uppercase;
+            background: linear-gradient(to bottom, #fff 0%, #aaa 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
+
+        /* Créditos Cachinhos */
+        .credits {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            display: block;
+        }
+
+        .config-label { 
+            display: block; font-size: 10px; font-weight: 700;
+            letter-spacing: 2px; margin-bottom: 8px; 
+            color: rgba(255,255,255,0.4); text-transform: uppercase;
+        }
+
+        .config-row { margin-bottom: 20px; }
+
+        .options { display: flex; gap: 8px; }
+
+        .btn-opt {
+            flex: 1; padding: 10px; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #999; border-radius: 10px; 
+            font-size: 10px; font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-opt:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-opt.active { 
+            background: #fff; color: #000; 
+            box-shadow: 0 0 15px rgba(255,255,255,0.3);
+            border-color: #fff;
+        }
+
+        .btn-start {
+            margin-top: 15px; padding: 15px; width: 100%;
+            border: none; border-radius: 12px;
+            background: #fff; color: #000;
+            font-weight: 800; font-size: 16px;
+            letter-spacing: 2px; cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-start:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255,255,255,0.2);
+        }
+
+        /* Estilo da Tabela de Ranking */
+        .ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: #ccc;
+        }
+        .ranking-table th { color: #666; font-size: 12px; padding-bottom: 10px; }
+        .ranking-table td { padding: 12px 5px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .rank-gold { color: var(--gold); font-weight: bold; }
+
+        #gameHUD { 
+            position: absolute; top: 25px; display: none; align-items: center; gap: 20px; z-index: 50; 
+            background: rgba(255,255,255,0.05); padding: 12px 30px;
+            border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .set-counter { font-weight: 800; font-size: 16px; display: flex; gap: 10px; letter-spacing: 1px; }
+        .hud-btn { background: transparent; border: none; color: #888; cursor: pointer; font-weight: bold; margin-left: 10px; }
+        .hud-btn:hover { color: #fff; }
+
+        canvas { border-radius: 20px; display: none; box-shadow: 0 0 100px rgba(0,0,0,0.5); }
+        
+        #winScreen { 
+            display: none; position: absolute; width: 100%; height: 100%; 
+            justify-content: center; align-items: center; flex-direction: column; z-index: 200; 
+            background: rgba(0,0,0,0.9);
+        }
+        
+        #rankBadge {
+            font-size: 14px;
+            letter-spacing: 3px;
+            margin-top: -20px;
+            margin-bottom: 30px;
+            padding: 5px 15px;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        #configSection, #cpuDifficultyRow { display: none; }
     </style>
 </head>
 <body>
 
-<div id="menuOverlay">
-    <h1>Neon Duel</h1>
-    <button onclick="start('cpu')">VS CPU</button>
-    <button onclick="start('pvp')">2 Jogadores</button>
-    <button onclick="start('target')">Modo Alvo 🎯</button>
-</div>
+    <div id="bg-animation"></div>
 
-<div id="hud">
-    <span id="score">0 - 0</span>
-</div>
+    <div id="menuOverlay">
+        <div class="menu-card">
+            <h1>Neon Duel</h1>
+            <span class="credits">Feito por Cachinhos</span>
+            
+            <div id="modeSection">
+                <span class="config-label">Selecione o Desafio</span>
+                <div class="config-row">
+                    <button class="btn-start" style="margin-bottom: 12px;" onclick="selectMode('cpu')">Jogador 1 vs CPU</button>
+                    <button class="btn-start" style="margin-bottom: 12px;" onclick="selectMode('pvp')">Jogador 1 vs Jogador 2</button>
+                    <button class="btn-start" style="background: var(--target-color); color: #000;" onclick="selectMode('target')">Acertar Objetivo 🎯</button>
+                </div>
+                <button class="btn-opt" style="width: 100%; margin-top: 10px;" onclick="showRanking()">🏆 Ver Ranking Global</button>
+            </div>
 
-<canvas id="game"></canvas>
+            <div id="configSection">
+                <div class="config-row" id="cpuDifficultyRow">
+                    <span class="config-label">Habilidade do Jogador 2 (CPU)</span>
+                    <div class="options">
+                        <button class="btn-opt" onclick="setCfg('cpuSkill', 3, this)">Baixa</button>
+                        <button class="btn-opt active" onclick="setCfg('cpuSkill', 5.5, this)">Média</button>
+                        <button class="btn-opt" onclick="setCfg('cpuSkill', 8, this)">Difícil</button>
+                    </div>
+                </div>
 
-<div id="win">
-    <h1 id="winner"></h1>
-    <button onclick="location.reload()">Reiniciar</button>
-</div>
+                <div class="config-row">
+                    <span class="config-label">Tamanho da Arena</span>
+                    <div class="options">
+                        <button class="btn-opt" onclick="setArena(600, 350, this)">Pequena</button>
+                        <button class="btn-opt active" onclick="setArena(900, 500, this)">Média</button>
+                        <button class="btn-opt" onclick="setArena(1200, 700, this)">Grande</button>
+                    </div>
+                </div>
 
-<script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+                <div class="config-row">
+                    <span class="config-label">Velocidade da Partida</span>
+                    <div class="options">
+                        <button class="btn-opt" onclick="setCfg('speed', 2, this)">Lenta</button>
+                        <button class="btn-opt active" onclick="setCfg('speed', 3.5, this)">Normal</button>
+                        <button class="btn-opt" onclick="setCfg('speed', 6.5, this)">Insana</button>
+                    </div>
+                </div>
 
-let mode;
-let p1Y, p2Y, ballX, ballY, vx, vy;
-let score1 = 0, score2 = 0;
-let running = false;
+                <div class="config-row">
+                    <span class="config-label">Tamanho da Raquete</span>
+                    <div class="options">
+                        <button class="btn-opt" onclick="setCfg('paddle', 60, this)">Pequena</button>
+                        <button class="btn-opt active" onclick="setCfg('paddle', 100, this)">Média</button>
+                        <button class="btn-opt" onclick="setCfg('paddle', 150, this)">Grande</button>
+                    </div>
+                </div>
 
-function resize(){
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener("resize", resize);
-resize();
+                <div class="config-row">
+                    <span class="config-label">Tamanho da Bola</span>
+                    <div class="options">
+                        <button class="btn-opt" onclick="setCfg('ball', 6, this)">Pequena</button>
+                        <button class="btn-opt active" onclick="setCfg('ball', 10, this)">Média</button>
+                        <button class="btn-opt" onclick="setCfg('ball', 16, this)">Grande</button>
+                    </div>
+                </div>
 
-function start(m){
-    mode = m;
-    document.getElementById("menuOverlay").style.display = "none";
-    document.getElementById("hud").style.display = "block";
-    canvas.style.display = "block";
+                <button class="btn-start" onclick="startGame()">Iniciar Partida</button>
+                <p style="font-size: 10px; cursor: pointer; color: #666; margin-top: 15px;" onclick="location.reload()">← VOLTAR</p>
+            </div>
+        </div>
+    </div>
 
-    p1Y = canvas.height/2 - 50;
-    p2Y = p1Y;
-    ballX = canvas.width/2;
-    ballY = canvas.height/2;
-    vx = 5 * (Math.random() > 0.5 ? 1 : -1);
-    vy = (Math.random() - 0.5) * 5;
+    <div id="rankingOverlay">
+        <div class="menu-card">
+            <h2>Hall da Fama</h2>
+            <span class="config-label">Top 5 - Modo Objetivo</span>
+            <table class="ranking-table" id="rankingBody">
+                </table>
+            <button class="btn-start" onclick="closeRanking()">FECHAR</button>
+        </div>
+    </div>
 
-    running = true;
-    loop();
-}
+    <div id="gameHUD">
+        <div id="setInfo" style="font-size: 12px; letter-spacing: 2px; color: #888;">SET <span id="setNumDisplay">1</span>/3</div>
+        <div class="set-counter">
+            <span id="p1SetScoreHUD" style="color: var(--p1-color)">0</span>
+            <span id="scoreSeparator" style="color: #444;">-</span>
+            <span id="p2SetScoreHUD" style="color: var(--p2-color)">0</span>
+        </div>
+        <div style="color: rgba(255,255,255,0.1)">|</div>
+        <button class="hud-btn" onclick="togglePause()" id="pauseBtn">PAUSAR</button>
+        <button class="hud-btn" onclick="location.reload()" style="color: #e74c3c;">SAIR</button>
+    </div>
 
-// 🎮 CONTROLE TOUCH (CORRIGIDO)
-window.addEventListener("touchmove", (e)=>{
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
+    <canvas id="pongCanvas" width="900" height="500"></canvas>
 
-    const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+    <div id="winScreen">
+        <h1 id="winnerText" style="font-size: 60px; margin-bottom: 30px; font-weight: 900;"></h1>
+        <div id="rankBadge">BRONZE</div>
+        <button class="btn-start" style="width: auto; padding: 20px 60px;" onclick="location.reload()">JOGAR NOVAMENTE</button>
+    </div>
 
-    if(touch.clientX < window.innerWidth/2){
-        p1Y = y - 50;
-    } else if(mode === "pvp"){
-        p2Y = y - 50;
-    }
-}, { passive:false });
+    <script>
+        const canvas = document.getElementById("pongCanvas");
+        const ctx = canvas.getContext("2d");
 
-function update(){
-    if(!running) return;
+        let gameRunning = false, isPaused = false;
+        let gameMode = 'pvp'; 
+        let scoreP1 = 0, scoreP2 = 0;
+        let setsWonP1 = 0, setsWonP2 = 0;
+        let currentSet = 1;
 
-    ballX += vx;
-    ballY += vy;
+        const colors = { p1: '#3498db', p2: '#e74c3c', target: '#2ecc71' };
+        let cfg = { speed: 3.5, paddle: 100, ball: 10, cpuSkill: 5.5 };
+        let currentBallSpeedX = 0; // Para calcular score final
 
-    if(ballY < 0 || ballY > canvas.height) vy *= -1;
+        let target = { x: 0, y: 0, active: false, radius: 25 };
+        const paddleWidth = 14;
+        let p1Y = 200, p2Y = 200;
+        let ballX = 450, ballY = 250;
+        let ballSpeedX = 0, ballSpeedY = 0;
 
-    // CPU
-    if(mode === "cpu"){
-        let center = p2Y + 50;
-        if(center < ballY) p2Y += 4;
-        else p2Y -= 4;
-    }
+        const keys = {};
+        window.addEventListener("keydown", e => keys[e.code] = true);
+        window.addEventListener("keyup", e => keys[e.code] = false);
 
-    // colisão
-    if(ballX < 20 && ballY > p1Y && ballY < p1Y+100){
-        vx = Math.abs(vx);
-    }
+        // --- SISTEMA DE RANKING ---
 
-    if(mode !== "target" && ballX > canvas.width-20 && ballY > p2Y && ballY < p2Y+100){
-        vx = -Math.abs(vx);
-    }
+        function getRankName(score) {
+            if (score >= 600) return { name: "MESTRE", color: "#e74c3c" };
+            if (score >= 400) return { name: "PLATINA", color: "#9b59b6" };
+            if (score >= 250) return { name: "OURO", color: "#f1c40f" };
+            if (score >= 150) return { name: "PRATA", color: "#bdc3c7" };
+            return { name: "BRONZE", color: "#cd7f32" };
+        }
 
-    // ponto
-    if(ballX < 0){
-        if(mode === "target") end("Fim de jogo");
-        else score2++, reset();
-    }
-    if(ballX > canvas.width){
-        if(mode !== "target") score1++, reset();
-    }
+        function saveScore(name, finalScore) {
+            let ranking = JSON.parse(localStorage.getItem("rankingTarget")) || [];
+            ranking.push({ name: name.toUpperCase(), score: finalScore, date: new Date().toLocaleDateString() });
+            
+            // Ordenar: maior score primeiro
+            ranking.sort((a, b) => b.score - a.score);
+            
+            // Manter apenas top 5
+            ranking = ranking.slice(0, 5);
+            
+            localStorage.setItem("rankingTarget", JSON.stringify(ranking));
+        }
 
-    document.getElementById("score").innerText = score1 + " - " + score2;
+        function showRanking() {
+            const ranking = JSON.parse(localStorage.getItem("rankingTarget")) || [];
+            const body = document.getElementById("rankingBody");
+            body.innerHTML = `<tr><th>POS</th><th>NOME</th><th>SCORE</th></tr>`;
+            
+            if (ranking.length === 0) {
+                body.innerHTML += `<tr><td colspan="3" style="padding:20px; color:#555">NENHUM RECORDE AINDA</td></tr>`;
+            }
 
-    if(score1 >= 5) end("Jogador 1 venceu");
-    if(score2 >= 5) end("Jogador 2 venceu");
-}
+            ranking.forEach((item, index) => {
+                const isFirst = index === 0;
+                body.innerHTML += `
+                    <tr class="${isFirst ? 'rank-gold' : ''}">
+                        <td>${index + 1}º</td>
+                        <td>${item.name}</td>
+                        <td>${item.score}</td>
+                    </tr>
+                `;
+            });
 
-function reset(){
-    ballX = canvas.width/2;
-    ballY = canvas.height/2;
-    vx *= -1;
-}
+            document.getElementById("rankingOverlay").style.display = "flex";
+        }
 
-function draw(){
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+        function closeRanking() {
+            document.getElementById("rankingOverlay").style.display = "none";
+        }
 
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, p1Y, 15, 100);
+        // --- CONTROLES DO JOGO ---
 
-    if(mode !== "target"){
-        ctx.fillRect(canvas.width-15, p2Y, 15, 100);
-    }
+        function selectMode(mode) {
+            gameMode = mode;
+            document.getElementById('modeSection').style.display = 'none';
+            document.getElementById('configSection').style.display = 'block';
+            if(mode === 'cpu') document.getElementById('cpuDifficultyRow').style.display = 'block';
+        }
 
-    ctx.beginPath();
-    ctx.arc(ballX, ballY, 8, 0, Math.PI*2);
-    ctx.fill();
-}
+        function setArena(w, h, btn) {
+            canvas.width = w;
+            canvas.height = h;
+            Array.from(btn.parentElement.children).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
 
-function loop(){
-    update();
-    draw();
-    if(running) requestAnimationFrame(loop);
-}
+        function setCfg(type, val, btn) {
+            cfg[type] = val;
+            Array.from(btn.parentElement.children).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
 
-function end(txt){
-    running = false;
-    document.getElementById("win").style.display = "flex";
-    document.getElementById("winner").innerText = txt;
-}
-</script>
+        function spawnTarget() {
+            target.x = 100 + Math.random() * (canvas.width - 200);
+            target.y = 50 + Math.random() * (canvas.height - 100);
+            target.active = true;
+        }
 
+        function startGame() {
+            document.getElementById("menuOverlay").style.display = "none";
+            document.getElementById("gameHUD").style.display = "flex";
+            canvas.style.display = "block";
+            p1Y = (canvas.height / 2) - (cfg.paddle / 2);
+            p2Y = p1Y;
+            
+            if(gameMode === 'target') {
+                document.getElementById('setInfo').style.display = 'none';
+                document.getElementById('p2SetScoreHUD').style.display = 'none';
+                document.getElementById('scoreSeparator').style.display = 'none';
+                spawnTarget();
+            }
+
+            gameRunning = true;
+            resetBall('p2');
+            requestAnimationFrame(loop);
+        }
+
+        function resetBall(lastScorer) {
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+            ballSpeedX = (lastScorer === 'p1' ? 1 : -1) * cfg.speed;
+            ballSpeedY = (Math.random() - 0.5) * (cfg.speed * 2);
+        }
+
+        function update() {
+            if (!gameRunning || isPaused) return;
+
+            if (keys["KeyW"] && p1Y > 0) p1Y -= 7;
+            if (keys["KeyS"] && p1Y < canvas.height - cfg.paddle) p1Y += 7;
+
+            if (gameMode === 'cpu') {
+                let cpuCenter = p2Y + (cfg.paddle / 2);
+                if (ballSpeedX > 0 && ballX > canvas.width / 2) {
+                    if (Math.abs(cpuCenter - ballY) > 15) {
+                        p2Y += (cpuCenter < ballY) ? cfg.cpuSkill * 0.8 : -cfg.cpuSkill * 0.8;
+                    }
+                }
+            } else if (gameMode === 'pvp') {
+                if (keys["ArrowUp"] && p2Y > 0) p2Y -= 7;
+                if (keys["ArrowDown"] && p2Y < canvas.height - cfg.paddle) p2Y += 7;
+            }
+
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+            currentBallSpeedX = Math.abs(ballSpeedX);
+
+            if (ballY - cfg.ball <= 0 || ballY + cfg.ball >= canvas.height) ballSpeedY *= -1;
+
+            if (gameMode === 'target' && ballX + cfg.ball >= canvas.width) {
+                ballSpeedX *= -1;
+                ballX = canvas.width - cfg.ball;
+            }
+
+            if (gameMode === 'target' && target.active) {
+                let dist = Math.hypot(ballX - target.x, ballY - target.y);
+                if (dist < target.radius + cfg.ball) {
+                    scoreP1++; 
+                    spawnTarget();
+                    ballSpeedX *= 1.05; // Aumenta velocidade a cada acerto
+                }
+            }
+
+            // Colisões raquetes
+            if (ballX - cfg.ball <= paddleWidth && ballY > p1Y && ballY < p1Y + cfg.paddle) {
+                let impact = (ballY - (p1Y + cfg.paddle / 2)) / (cfg.paddle / 2);
+                ballSpeedX = Math.abs(ballSpeedX) * 1.05;
+                ballSpeedY = impact * (Math.abs(ballSpeedX) * 1.2);
+                ballX = paddleWidth + cfg.ball;
+            }
+
+            if (gameMode !== 'target' && ballX + cfg.ball >= canvas.width - paddleWidth && ballY > p2Y && ballY < p2Y + cfg.paddle) {
+                let impact = (ballY - (p2Y + cfg.paddle / 2)) / (cfg.paddle / 2);
+                ballSpeedX = -Math.abs(ballSpeedX) * 1.05;
+                ballSpeedY = impact * (Math.abs(ballSpeedX) * 1.2);
+                ballX = canvas.width - paddleWidth - cfg.ball;
+            }
+
+            // Lógica de Ponto / Fim de Jogo
+            if (ballX < 0) { 
+                if (gameMode === 'target') endGameTarget();
+                else { scoreP2++; resetBall('p2'); }
+            }
+            if (gameMode !== 'target' && ballX > canvas.width) { 
+                scoreP1++; resetBall('p1'); 
+            }
+
+            // Sets PvP/CPU
+            if (gameMode !== 'target') {
+                if (scoreP1 >= 10 || scoreP2 >= 10) {
+                    if (scoreP1 >= 10) setsWonP1++; else setsWonP2++;
+                    document.getElementById("p1SetScoreHUD").innerText = setsWonP1;
+                    document.getElementById("p2SetScoreHUD").innerText = setsWonP2;
+                    scoreP1 = 0; scoreP2 = 0;
+                    if (setsWonP1 === 2 || setsWonP2 === 2) endGame(setsWonP1 === 2 ? "JOGADOR 1" : "JOGADOR 2");
+                    else { currentSet++; document.getElementById("setNumDisplay").innerText = currentSet; }
+                }
+            }
+        }
+
+        function endGame(winnerName) {
+            gameRunning = false;
+            document.getElementById("winScreen").style.display = "flex";
+            document.getElementById("winnerText").innerText = winnerName + " VENCEU!";
+            document.getElementById("winnerText").style.color = (winnerName === "JOGADOR 1") ? colors.p1 : colors.p2;
+            document.getElementById("rankBadge").style.display = "none";
+            document.getElementById("gameHUD").style.display = "none";
+        }
+
+        function endGameTarget() {
+            gameRunning = false;
+            
+            // Cálculo de Pontuação: Acertos + Bônus de Velocidade
+            const finalScore = Math.floor((scoreP1 * 10) + (currentBallSpeedX * 5));
+            const rank = getRankName(finalScore);
+
+            document.getElementById("winScreen").style.display = "flex";
+            document.getElementById("winnerText").innerText = "FIM DE TREINO";
+            document.getElementById("winnerText").style.color = colors.target;
+            
+            const badge = document.getElementById("rankBadge");
+            badge.style.display = "block";
+            badge.innerText = rank.name + " - " + finalScore + " PTS";
+            badge.style.color = rank.color;
+            badge.style.border = `1px solid ${rank.color}`;
+
+            document.getElementById("gameHUD").style.display = "none";
+
+            // Solicitar nome para o ranking após um pequeno delay
+            setTimeout(() => {
+                let playerName = prompt(`Sua pontuação final foi ${finalScore}!\nDigite seu nome para o ranking:`);
+                if (playerName) {
+                    saveScore(playerName, finalScore);
+                    showRanking();
+                }
+            }, 500);
+        }
+
+        function draw() {
+            if (!gameRunning) return;
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.textAlign = "center"; ctx.textBaseline = "middle"; 
+            let fontSize = canvas.width * 0.15;
+            ctx.font = `800 ${fontSize}px 'Segoe UI'`;
+            
+            if (gameMode === 'target') {
+                ctx.fillStyle = "rgba(46, 204, 113, 0.15)";
+                ctx.fillText(scoreP1, canvas.width / 2, canvas.height / 2);
+            } else {
+                ctx.fillStyle = "rgba(52, 152, 219, 0.15)";
+                ctx.fillText(scoreP1, canvas.width / 4, canvas.height / 2);
+                ctx.fillStyle = "rgba(231, 76, 60, 0.15)";
+                ctx.fillText(scoreP2, (canvas.width / 4) * 3, canvas.height / 2);
+            }
+
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(canvas.width / 2, 0); ctx.lineTo(canvas.width / 2, canvas.height); ctx.stroke();
+
+            if (gameMode === 'target' && target.active) {
+                ctx.shadowBlur = 20; ctx.shadowColor = colors.target; ctx.fillStyle = colors.target;
+                ctx.beginPath(); ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            ctx.shadowBlur = 25;
+            ctx.fillStyle = colors.p1; ctx.shadowColor = colors.p1; 
+            ctx.fillRect(0, p1Y, paddleWidth, cfg.paddle);
+
+            if (gameMode !== 'target') {
+                ctx.fillStyle = colors.p2; ctx.shadowColor = colors.p2; 
+                ctx.fillRect(canvas.width - paddleWidth, p2Y, paddleWidth, cfg.paddle);
+            }
+            
+            ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.beginPath();
+            ctx.arc(ballX, ballY, cfg.ball, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+
+            if (isPaused) {
+                ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#fff"; ctx.font = "bold 20px Arial"; ctx.fillText("PAUSADO", canvas.width/2, canvas.height/2);
+            }
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById("pauseBtn").innerText = isPaused ? "VOLTAR" : "PAUSAR";
+        }
+
+        function loop() { update(); draw(); if (gameRunning) requestAnimationFrame(loop); }
+    </script>
 </body>
 </html>
